@@ -1,36 +1,76 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 議事録君 Webアプリ (Gijiroku-kun)
 
-## Getting Started
+リアルタイム議事録作成・AI評価支援Webアプリケーションです。
+Next.js (App Router), TypeScript, Tailwind CSS, shadcn/ui を使用して構築されています。
 
-First, run the development server:
+## 🚀 主な機能
+
+### 1. 2つの動作モード
+- **面接モード (`Interview Mode`)**:
+  - 候補者の評価に特化。
+  - 評価シート（スコア・コメント入力）機能。
+  - 履歴書/ES分析による深掘り質問提案。
+- **MTGモード (`Meeting Mode`)**:
+  - 一般的な会議議事録向け。
+  - シンプルなメモとトピック分析機能。
+
+### 2. AIアシスト
+- **音声認識**: ブラウザ標準のWeb Speech APIに加え、Groq APIなどの高速モデルもサポート予定。
+- **リアルタイム分析**: 会話内容から重要なトピックや質問をAIが自動抽出。
+- **評価支援**:
+  - 全評価項目の一括AI採点・コメント生成。
+  - 項目ごとの個別AIアシスト機能（✨ボタン）。
+
+### 3. UI/UXの改善
+- **カード型評価シート**: 視認性の高いカードデザインを採用。各項目に直感的なスコア入力とメモ欄を配置。
+- **直感的な操作**:
+  - ヘッダーにマニュアル、設定、エクスポート機能を集約。
+  - マウスオーバーで機能説明が表示されるツールチップ対応。
+- **データ管理**:
+  - ローカルストレージへの自動保存（ブラウザを閉じてもデータが残ります）。
+  - ワンクリックでWord形式(.docx)やテキスト形式(.txt)にエクスポート可能。
+  - 不要なメモや評価項目は個別に削除可能。
+
+## 🛠️ 技術スタック
+- **Framework**: Next.js 16 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **UI Components**: shadcn/ui (Radix UI)
+- **Icons**: Lucide React
+- **AI**: Google Gemini API, Groq API
+
+## 🏁 セットアップ手順
+
+### 必要要件
+- Node.js 18以上
+- npm / yarn / pnpm / bun
+
+### 開発環境の起動
+
+1. リポジトリをクローンまたはダウンロードします。
+2. 依存パッケージをインストールします。
+
+```bash
+npm install
+# or
+yarn install
+```
+
+3. 開発サーバーを起動します。
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. ブラウザで [http://localhost:3000](http://localhost:3000) にアクセスします。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### APIキーの設定
+右上の「設定（歯車アイコン）」から以下のAPIキーを設定してください。
+- **Gemini API Key**: 必須（会話分析、評価生成に使用）
+- **Groq API Key**: 任意（より高速な音声認識・応答が必要な場合）
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📦 デプロイ
+Vercel などのホスティングサービスへのデプロイを推奨します。GitHubリポジトリと連携するだけで自動的にデプロイされます。
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📄 ライセンス
+[MIT License](LICENSE)
