@@ -10,9 +10,8 @@ const notoSansJP = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
-  title: "議事録君 - 面接・MTG支援ツール",
-  description:
-    "面接・MTG対応の音声認識・AI分析・評価シート機能搭載の支援ツール。",
+  title: "議事録くん - 軽量MTGメモ",
+  description: "録音、メモ、文字起こしログ、Word/TXT出力に絞った軽量議事録ツール。",
 };
 
 export default function RootLayout({

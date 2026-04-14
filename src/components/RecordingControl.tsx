@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Mic, MicOff, Monitor, MonitorOff, Square } from "lucide-react";
 import { SpeechRecognitionEngine } from "@/lib/speech-recognition";
 import { AudioCaptureEngine, type SystemAudioChunk, type AudioCaptureState } from "@/lib/audio-capture";
-import { transcribeWithGroq } from "@/lib/ai-service";
+import { transcribeWithGroq } from "@/lib/groq-service";
 
 /** 音声波形ビジュアライザー */
 function AudioVisualizer({ analyser }: { analyser: AnalyserNode | null }) {
