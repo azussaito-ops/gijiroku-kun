@@ -168,7 +168,7 @@ export default function InterviewDocuments({
       <div className="space-y-1">
         <h2 className="text-sm font-bold">面接準備</h2>
         <p className="text-xs text-muted-foreground">
-          履歴書と職務経歴書から要点と質問候補を作ります。
+          履歴書と職務経歴書から基本情報、要点、質問候補を作ります。
         </p>
       </div>
 
@@ -198,11 +198,12 @@ export default function InterviewDocuments({
         ) : (
           <Sparkles className="h-4 w-4" />
         )}
-        {isAnalyzing ? "作成中..." : "要約・質問を作成"}
+        {isAnalyzing ? "作成中..." : "基本情報・要約・質問を作成"}
       </Button>
 
       {analysis && (
         <div className="space-y-3">
+          <BasicInfoBlock analysis={analysis} />
           <SummaryBlock title="履歴書の要約" text={analysis.resumeSummary} />
           <SummaryBlock title="職務経歴書の要約" text={analysis.workHistorySummary} />
           <Card className="gap-3 py-4 rounded-lg">
@@ -225,6 +226,49 @@ export default function InterviewDocuments({
         </div>
       )}
     </div>
+  );
+}
+
+function BasicInfoBlock({ analysis }: { analysis: InterviewAnalysis }) {
+  const info = analysis.basicInfo;
+  const rows = [
+    ["氏名", info?.name],
+    ["フリガナ", info?.kana],
+    ["学校名", info?.schoolName],
+    ["学部・学科", info?.facultyDepartment],
+    ["卒業・在学", info?.graduationYear],
+    ["現職・直近企業", info?.currentCompany],
+    ["職種・役割", info?.latestRole],
+    ["メール", info?.email],
+    ["電話番号", info?.phone],
+    ["住所・居住地", info?.location],
+  ].filter((row): row is [string, string] => Boolean(row[1]));
+
+  return (
+    <Card className="gap-3 py-4 rounded-lg">
+      <CardHeader className="px-4 gap-1">
+        <CardTitle className="text-sm">基本情報</CardTitle>
+        <CardDescription className="text-xs">
+          書類から読み取れた候補者情報です。
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="px-4">
+        {rows.length > 0 ? (
+          <dl className="grid grid-cols-[88px_1fr] gap-x-3 gap-y-2 text-xs">
+            {rows.map(([label, value]) => (
+              <div key={label} className="contents">
+                <dt className="text-muted-foreground">{label}</dt>
+                <dd className="min-w-0 break-words font-medium">{value}</dd>
+              </div>
+            ))}
+          </dl>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            基本情報は見つかりませんでした。
+          </p>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

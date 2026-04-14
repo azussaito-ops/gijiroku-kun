@@ -235,6 +235,28 @@ export default function InterviewPage() {
     }
 
     if (state.interviewAnalysis) {
+      const info = state.interviewAnalysis.basicInfo;
+      const basicInfoLines = [
+        ["氏名", info?.name],
+        ["フリガナ", info?.kana],
+        ["学校名", info?.schoolName],
+        ["学部・学科", info?.facultyDepartment],
+        ["卒業・在学", info?.graduationYear],
+        ["現職・直近企業", info?.currentCompany],
+        ["職種・役割", info?.latestRole],
+        ["メール", info?.email],
+        ["電話番号", info?.phone],
+        ["住所・居住地", info?.location],
+      ].filter((row): row is [string, string] => Boolean(row[1]));
+
+      if (basicInfoLines.length > 0) {
+        sections.push("--- 基本情報 ---");
+        basicInfoLines.forEach(([label, value]) => {
+          sections.push(`${label}: ${value}`);
+        });
+        sections.push("");
+      }
+
       sections.push("--- 履歴書の要約 ---");
       sections.push(state.interviewAnalysis.resumeSummary);
       sections.push("");

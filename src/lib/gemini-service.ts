@@ -114,6 +114,18 @@ export async function analyzeInterviewDocuments({
 出力はJSONだけにしてください。Markdownのコードブロックは不要です。
 
 {
+  "basicInfo": {
+    "name": "氏名。見つからない場合は空文字。",
+    "kana": "ふりがな・フリガナ。見つからない場合は空文字。",
+    "schoolName": "学校名・大学名・専門学校名・高校名。最終学歴を優先。見つからない場合は空文字。",
+    "facultyDepartment": "学部・学科・専攻。見つからない場合は空文字。",
+    "graduationYear": "卒業・修了・在学期間。見つからない場合は空文字。",
+    "currentCompany": "現職または直近の会社名。見つからない場合は空文字。",
+    "latestRole": "現職または直近の職種・役割。見つからない場合は空文字。",
+    "email": "メールアドレス。見つからない場合は空文字。",
+    "phone": "電話番号。見つからない場合は空文字。",
+    "location": "住所・居住地。見つからない場合は空文字。"
+  },
   "resumeSummary": "履歴書の要約。3〜5項目の箇条書き風の短い文章。",
   "workHistorySummary": "職務経歴書の要約。経験、役割、実績、技術/業務領域が分かる短い文章。",
   "suggestedQuestions": [
@@ -132,6 +144,7 @@ ${resumeText || "(PDF添付または未入力)"}
 ${workHistoryText || "(PDF添付または未入力)"}
 
 質問候補は、経歴の深掘り、実績の再現性、役割範囲、転職理由、入社後の期待値確認に使えるものを優先してください。
+基本情報は書類に明記されている内容だけを抽出し、推測で補完しないでください。
 `;
 
   const raw = await callGemini(prompt, apiKey, model, inlineDocuments);
@@ -142,6 +155,20 @@ ${workHistoryText || "(PDF添付または未入力)"}
   }
 
   return {
+    basicInfo: parsed.basicInfo
+      ? {
+          name: parsed.basicInfo.name || "",
+          kana: parsed.basicInfo.kana || "",
+          schoolName: parsed.basicInfo.schoolName || "",
+          facultyDepartment: parsed.basicInfo.facultyDepartment || "",
+          graduationYear: parsed.basicInfo.graduationYear || "",
+          currentCompany: parsed.basicInfo.currentCompany || "",
+          latestRole: parsed.basicInfo.latestRole || "",
+          email: parsed.basicInfo.email || "",
+          phone: parsed.basicInfo.phone || "",
+          location: parsed.basicInfo.location || "",
+        }
+      : undefined,
     resumeSummary: parsed.resumeSummary || "",
     workHistorySummary: parsed.workHistorySummary || "",
     suggestedQuestions: Array.isArray(parsed.suggestedQuestions)

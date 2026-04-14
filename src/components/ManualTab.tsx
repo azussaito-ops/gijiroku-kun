@@ -44,7 +44,7 @@ const sections: ManualSection[] = [
     title: "3. 面接モード",
     steps: [
       "履歴書と職務経歴書をPDFまたはTXTでアップロードします。",
-      "「要約・質問を作成」を押すと、要約と質問候補が作られます。",
+      "「基本情報・要約・質問を作成」を押すと、氏名や学校名などの基本情報、要約、質問候補が作られます。",
       "録音、面接メモ、会話ログはMTGモードと同じように使えます。",
     ],
   },
@@ -62,9 +62,9 @@ const sections: ManualSection[] = [
     icon: <FileDown className="h-4 w-4 text-emerald-700" />,
     title: "5. 保存と出力",
     steps: [
-      "「コピー」でメモ、要約、質問候補、会話ログをコピーできます。",
+      "「コピー」でメモ、基本情報、要約、質問候補、会話ログをコピーできます。",
       "「TXT」で会話ログをテキストファイルとして保存できます。",
-      "「Word出力」でメモ、要約、質問候補、会話ログをWord形式で保存できます。",
+      "「Word出力」でメモ、基本情報、要約、質問候補、会話ログをWord形式で保存できます。",
     ],
   },
 ];
@@ -93,7 +93,7 @@ export default function ManualTab() {
           使い方
         </h2>
         <p className="text-xs text-muted-foreground">
-          MTGは軽く、面接は履歴書・職務経歴書の要約と質問候補を使えます。
+          MTGは軽く、面接は履歴書・職務経歴書の基本情報、要約、質問候補を使えます。
         </p>
       </div>
 
@@ -113,7 +113,7 @@ export default function ManualTab() {
           </div>
           <div className="flex items-center gap-2">
             <FileText className="h-3 w-3 text-muted-foreground" />
-            <span>履歴書・職務経歴書の要約</span>
+            <span>書類の基本情報・要約</span>
           </div>
           <div className="flex items-center gap-2">
             <FileDown className="h-3 w-3 text-muted-foreground" />

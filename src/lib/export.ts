@@ -17,6 +17,7 @@ export function downloadAsWord(
 
   const analysisHtml = interviewAnalysis
     ? `
+      ${buildBasicInfoHtml(interviewAnalysis)}
       <h2>履歴書の要約</h2>
       <p>${escapeHtml(interviewAnalysis.resumeSummary).replace(/\n/g, "<br>")}</p>
       <h2>職務経歴書の要約</h2>
@@ -75,4 +76,31 @@ function escapeHtml(value: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function buildBasicInfoHtml(interviewAnalysis: InterviewAnalysis): string {
+  const info = interviewAnalysis.basicInfo;
+  const rows = [
+    ["氏名", info?.name],
+    ["フリガナ", info?.kana],
+    ["学校名", info?.schoolName],
+    ["学部・学科", info?.facultyDepartment],
+    ["卒業・在学", info?.graduationYear],
+    ["現職・直近企業", info?.currentCompany],
+    ["職種・役割", info?.latestRole],
+    ["メール", info?.email],
+    ["電話番号", info?.phone],
+    ["住所・居住地", info?.location],
+  ].filter((row): row is [string, string] => Boolean(row[1]));
+
+  if (rows.length === 0) return "";
+
+  return `
+    <h2>基本情報</h2>
+    <table border="1" cellspacing="0" cellpadding="6">
+      ${rows
+        .map(([label, value]) => `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(value)}</td></tr>`)
+        .join("")}
+    </table>
+  `;
 }

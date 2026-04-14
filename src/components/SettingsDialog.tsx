@@ -88,7 +88,7 @@ export default function SettingsDialog({
 
         <div className="space-y-4 mt-4">
           <ApiKeyField
-            label="Gemini API（履歴書・職務経歴書の要約）"
+            label="Gemini API（書類の基本情報・要約）"
             description={`使用モデル: ${geminiModel}`}
             href="https://aistudio.google.com/app/apikey"
             placeholder="AIza..."

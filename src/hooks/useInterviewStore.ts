@@ -8,7 +8,21 @@ export interface LogItem {
   speaker: "self" | "other";
 }
 
+export interface CandidateBasicInfo {
+  name: string;
+  kana: string;
+  schoolName: string;
+  facultyDepartment: string;
+  graduationYear: string;
+  currentCompany: string;
+  latestRole: string;
+  email: string;
+  phone: string;
+  location: string;
+}
+
 export interface InterviewAnalysis {
+  basicInfo?: CandidateBasicInfo;
   resumeSummary: string;
   workHistorySummary: string;
   suggestedQuestions: string[];
