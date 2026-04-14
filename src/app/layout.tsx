@@ -10,8 +10,8 @@ const notoSansJP = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
-  title: "議事録くん - 軽量MTGメモ",
-  description: "録音、メモ、文字起こしログ、Word/TXT出力に絞った軽量議事録ツール。",
+  title: "議事録くん - MTG・面接メモ",
+  description: "録音、メモ、文字起こしログ、面接書類の要約と質問候補を扱える議事録ツール。",
 };
 
 export default function RootLayout({

@@ -8,29 +8,100 @@ export interface LogItem {
   speaker: "self" | "other";
 }
 
+export interface InterviewAnalysis {
+  resumeSummary: string;
+  workHistorySummary: string;
+  suggestedQuestions: string[];
+}
+
+export interface DocumentPayload {
+  text: string;
+  fileName: string;
+  base64?: string;
+  mimeType?: string;
+}
+
 export interface InterviewState {
   logs: LogItem[];
   freeMemo: string;
   groqApiKey: string;
+  geminiApiKey: string;
+  geminiModel: string;
+  resumeText: string;
+  resumeFileName: string;
+  resumeData?: string;
+  resumeMimeType?: string;
+  workHistoryText: string;
+  workHistoryFileName: string;
+  workHistoryData?: string;
+  workHistoryMimeType?: string;
+  interviewAnalysis: InterviewAnalysis | null;
 }
 
 const STORAGE_KEY = "interview_hub_nextjs_v1";
 const SAVE_DEBOUNCE_MS = 500;
+const DEFAULT_GEMINI_MODEL = "gemini-3-flash-preview";
 
 function getDefaultState(): InterviewState {
   return {
     logs: [],
     freeMemo: "",
     groqApiKey: "",
+    geminiApiKey: "",
+    geminiModel: DEFAULT_GEMINI_MODEL,
+    resumeText: "",
+    resumeFileName: "",
+    resumeData: "",
+    resumeMimeType: "",
+    workHistoryText: "",
+    workHistoryFileName: "",
+    workHistoryData: "",
+    workHistoryMimeType: "",
+    interviewAnalysis: null,
   };
 }
 
-function normalizeSavedState(saved: Partial<InterviewState>): InterviewState {
+type LegacySavedState = Partial<InterviewState> & {
+  apiKey?: string;
+  esText?: string;
+  esData?: string;
+};
+
+function normalizeSavedState(saved: LegacySavedState): InterviewState {
   return {
     ...getDefaultState(),
     logs: Array.isArray(saved.logs) ? saved.logs : [],
     freeMemo: typeof saved.freeMemo === "string" ? saved.freeMemo : "",
     groqApiKey: typeof saved.groqApiKey === "string" ? saved.groqApiKey : "",
+    geminiApiKey:
+      typeof saved.geminiApiKey === "string"
+        ? saved.geminiApiKey
+        : typeof saved.apiKey === "string"
+          ? saved.apiKey
+          : "",
+    geminiModel:
+      typeof saved.geminiModel === "string" && saved.geminiModel
+        ? saved.geminiModel
+        : DEFAULT_GEMINI_MODEL,
+    resumeText: typeof saved.resumeText === "string" ? saved.resumeText : "",
+    resumeFileName: typeof saved.resumeFileName === "string" ? saved.resumeFileName : "",
+    workHistoryText:
+      typeof saved.workHistoryText === "string"
+        ? saved.workHistoryText
+        : typeof saved.esText === "string"
+          ? saved.esText
+          : "",
+    workHistoryFileName:
+      typeof saved.workHistoryFileName === "string" ? saved.workHistoryFileName : "",
+    interviewAnalysis: saved.interviewAnalysis ?? null,
+  };
+}
+
+function toPersistedState(state: InterviewState): InterviewState {
+  return {
+    ...state,
+    resumeData: "",
+    workHistoryData: "",
   };
 }
 
@@ -69,7 +140,7 @@ export function useInterviewStore() {
 
     saveTimer.current = setTimeout(() => {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(toPersistedState(state)));
       } catch (error) {
         console.error("保存に失敗しました:", error);
       }
@@ -92,7 +163,7 @@ export function useInterviewStore() {
       }
 
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(toPersistedState(state)));
       } catch (error) {
         console.error("保存に失敗しました:", error);
       }
@@ -130,10 +201,44 @@ export function useInterviewStore() {
     setState((prev) => ({ ...prev, groqApiKey: key }));
   }, []);
 
+  const setGeminiApiKey = useCallback((key: string) => {
+    setState((prev) => ({ ...prev, geminiApiKey: key }));
+  }, []);
+
+  const setGeminiModel = useCallback((model: string) => {
+    setState((prev) => ({ ...prev, geminiModel: model || DEFAULT_GEMINI_MODEL }));
+  }, []);
+
+  const setResumeDocument = useCallback((document: DocumentPayload) => {
+    setState((prev) => ({
+      ...prev,
+      resumeText: document.text,
+      resumeFileName: document.fileName,
+      resumeData: document.base64 || "",
+      resumeMimeType: document.mimeType || "",
+    }));
+  }, []);
+
+  const setWorkHistoryDocument = useCallback((document: DocumentPayload) => {
+    setState((prev) => ({
+      ...prev,
+      workHistoryText: document.text,
+      workHistoryFileName: document.fileName,
+      workHistoryData: document.base64 || "",
+      workHistoryMimeType: document.mimeType || "",
+    }));
+  }, []);
+
+  const setInterviewAnalysis = useCallback((analysis: InterviewAnalysis | null) => {
+    setState((prev) => ({ ...prev, interviewAnalysis: analysis }));
+  }, []);
+
   const resetAll = useCallback(() => {
     setState((prev) => ({
       ...getDefaultState(),
       groqApiKey: prev.groqApiKey,
+      geminiApiKey: prev.geminiApiKey,
+      geminiModel: prev.geminiModel,
     }));
   }, []);
 
@@ -143,6 +248,11 @@ export function useInterviewStore() {
     clearLogs,
     updateFreeMemo,
     setGroqApiKey,
+    setGeminiApiKey,
+    setGeminiModel,
+    setResumeDocument,
+    setWorkHistoryDocument,
+    setInterviewAnalysis,
     resetAll,
   };
 }

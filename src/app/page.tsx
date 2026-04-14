@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import dynamic from "next/dynamic";
 import {
+  Briefcase,
   Copy,
   FileDown,
   FileText,
@@ -10,6 +11,7 @@ import {
   HelpCircle,
   StickyNote,
   Trash2,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,8 +20,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { useInterviewStore } from "@/hooks/useInterviewStore";
+import { useInterviewStore, type DocumentPayload } from "@/hooks/useInterviewStore";
 import { downloadAsText, downloadAsWord } from "@/lib/export";
+
+type AppMode = "meeting" | "interview";
 
 const PanelSkeleton = () => (
   <div className="h-24 animate-pulse rounded-md border bg-muted/40" />
@@ -31,6 +35,11 @@ const RecordingControl = dynamic(() => import("@/components/RecordingControl"), 
 });
 
 const TranscriptLog = dynamic(() => import("@/components/TranscriptLog"), {
+  ssr: false,
+  loading: PanelSkeleton,
+});
+
+const InterviewDocuments = dynamic(() => import("@/components/InterviewDocuments"), {
   ssr: false,
   loading: PanelSkeleton,
 });
@@ -51,12 +60,18 @@ export default function InterviewPage() {
     updateFreeMemo,
     clearLogs,
     setGroqApiKey,
+    setGeminiApiKey,
+    setResumeDocument,
+    setWorkHistoryDocument,
+    setInterviewAnalysis,
     resetAll,
   } = useInterviewStore();
 
+  const [appMode, setAppMode] = useState<AppMode>("meeting");
   const [interimText, setInterimText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [saveVisible, setSaveVisible] = useState(false);
+  const [isAnalyzingDocuments, setIsAnalyzingDocuments] = useState(false);
   const [, startInterimTransition] = useTransition();
   const saveStatusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -107,6 +122,72 @@ export default function InterviewPage() {
     }
   }, [resetAll]);
 
+  const handleDocumentLoaded = useCallback(
+    (kind: "resume" | "workHistory", document: DocumentPayload) => {
+      if (kind === "resume") {
+        setResumeDocument(document);
+      } else {
+        setWorkHistoryDocument(document);
+      }
+      setInterviewAnalysis(null);
+    },
+    [setResumeDocument, setWorkHistoryDocument, setInterviewAnalysis]
+  );
+
+  const handleAnalyzeDocuments = useCallback(async () => {
+    if (!state.geminiApiKey) {
+      alert("Gemini APIキーを設定してください。右上の「設定」から入力できます。");
+      return;
+    }
+
+    const hasResume = Boolean(state.resumeText || state.resumeData);
+    const hasWorkHistory = Boolean(state.workHistoryText || state.workHistoryData);
+    if (!hasResume && !hasWorkHistory) {
+      alert("履歴書または職務経歴書をアップロードしてください。");
+      return;
+    }
+
+    setIsAnalyzingDocuments(true);
+    try {
+      const { analyzeInterviewDocuments } = await import("@/lib/gemini-service");
+      const analysis = await analyzeInterviewDocuments({
+        resumeText: state.resumeText,
+        workHistoryText: state.workHistoryText,
+        apiKey: state.geminiApiKey,
+        model: state.geminiModel,
+        inlineDocuments: [
+          state.resumeData
+            ? {
+                mimeType: state.resumeMimeType || "application/pdf",
+                data: state.resumeData,
+              }
+            : null,
+          state.workHistoryData
+            ? {
+                mimeType: state.workHistoryMimeType || "application/pdf",
+                data: state.workHistoryData,
+              }
+            : null,
+        ].filter((document): document is { mimeType: string; data: string } => Boolean(document)),
+      });
+      setInterviewAnalysis(analysis);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "要約と質問候補の作成に失敗しました。");
+    } finally {
+      setIsAnalyzingDocuments(false);
+    }
+  }, [
+    state.geminiApiKey,
+    state.geminiModel,
+    state.resumeText,
+    state.resumeData,
+    state.resumeMimeType,
+    state.workHistoryText,
+    state.workHistoryData,
+    state.workHistoryMimeType,
+    setInterviewAnalysis,
+  ]);
+
   const handleCopyAll = useCallback(() => {
     const sections: string[] = [];
     sections.push("=== 議事録データ ===");
@@ -116,6 +197,20 @@ export default function InterviewPage() {
     if (state.freeMemo) {
       sections.push("--- メモ ---");
       sections.push(state.freeMemo);
+      sections.push("");
+    }
+
+    if (state.interviewAnalysis) {
+      sections.push("--- 履歴書の要約 ---");
+      sections.push(state.interviewAnalysis.resumeSummary);
+      sections.push("");
+      sections.push("--- 職務経歴書の要約 ---");
+      sections.push(state.interviewAnalysis.workHistorySummary);
+      sections.push("");
+      sections.push("--- 質問候補 ---");
+      state.interviewAnalysis.suggestedQuestions.forEach((question, index) => {
+        sections.push(`${index + 1}. ${question}`);
+      });
       sections.push("");
     }
 
@@ -133,7 +228,9 @@ export default function InterviewPage() {
     }).catch(() => {
       alert("コピーに失敗しました。");
     });
-  }, [state.freeMemo, state.logs]);
+  }, [state.freeMemo, state.interviewAnalysis, state.logs]);
+
+  const memoTitle = appMode === "interview" ? "面接メモ" : "MTGメモ";
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-background">
@@ -157,20 +254,50 @@ export default function InterviewPage() {
               議事録くん
             </span>
           </h1>
-          <span
-            className={`hidden sm:inline text-xs ${
-              isRecording ? "text-white/80" : "text-muted-foreground"
-            }`}
-          >
-            録音、メモ、文字起こしログだけの軽量版
-          </span>
+
+          <div className={`flex rounded-md border overflow-hidden ${isRecording ? "border-white/30" : "border-input"}`}>
+            <button
+              onClick={() => setAppMode("meeting")}
+              className={`px-3 py-1 text-[10px] font-bold flex items-center gap-1.5 transition-colors ${
+                appMode === "meeting"
+                  ? isRecording
+                    ? "bg-white/20 text-white"
+                    : "bg-emerald-100 text-emerald-700"
+                  : isRecording
+                    ? "text-white/70 hover:bg-white/10"
+                    : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <Users className="h-3.5 w-3.5" />
+              MTG
+            </button>
+            <div className={`w-px ${isRecording ? "bg-white/30" : "bg-border"}`} />
+            <button
+              onClick={() => setAppMode("interview")}
+              className={`px-3 py-1 text-[10px] font-bold flex items-center gap-1.5 transition-colors ${
+                appMode === "interview"
+                  ? isRecording
+                    ? "bg-white/20 text-white"
+                    : "bg-indigo-100 text-indigo-700"
+                  : isRecording
+                    ? "text-white/70 hover:bg-white/10"
+                    : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <Briefcase className="h-3.5 w-3.5" />
+              面接
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center gap-1.5 overflow-x-auto sm:overflow-visible pb-1 sm:pb-0">
           <div className="flex items-center gap-1 mr-1">
             <SettingsDialog
               groqApiKey={state.groqApiKey}
+              geminiApiKey={state.geminiApiKey}
+              geminiModel={state.geminiModel}
               onGroqApiKeyChange={setGroqApiKey}
+              onGeminiApiKeyChange={setGeminiApiKey}
             />
 
             <Dialog>
@@ -212,7 +339,7 @@ export default function InterviewPage() {
                 ? "bg-white/20 hover:bg-white/30 text-white border-white/30"
                 : ""
             }`}
-            title="メモと会話ログをコピー"
+            title="メモ、要約、会話ログをコピー"
           >
             <Copy className="h-3.5 w-3.5" />
             コピー
@@ -234,7 +361,7 @@ export default function InterviewPage() {
           </Button>
 
           <Button
-            onClick={() => downloadAsWord(state.logs, state.freeMemo)}
+            onClick={() => downloadAsWord(state.logs, state.freeMemo, state.interviewAnalysis)}
             size="sm"
             className={`text-xs h-8 gap-1.5 shadow-sm ${
               isRecording
@@ -249,7 +376,20 @@ export default function InterviewPage() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col md:flex-row overflow-hidden">
+      <main className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        {appMode === "interview" && (
+          <aside className="w-full lg:w-96 h-[42vh] lg:h-auto border-b lg:border-b-0 lg:border-r shrink-0 overflow-hidden">
+            <InterviewDocuments
+              resumeFileName={state.resumeFileName}
+              workHistoryFileName={state.workHistoryFileName}
+              analysis={state.interviewAnalysis}
+              isAnalyzing={isAnalyzingDocuments}
+              onDocumentLoaded={handleDocumentLoaded}
+              onAnalyze={handleAnalyzeDocuments}
+            />
+          </aside>
+        )}
+
         <div className="flex-1 flex flex-col min-w-0">
           <div className="p-4 border-b bg-muted/30 shrink-0">
             <RecordingControl
@@ -266,7 +406,7 @@ export default function InterviewPage() {
               <div className="flex items-center gap-2">
                 <h2 className="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
                   <StickyNote className="h-3.5 w-3.5" />
-                  MTGメモ
+                  {memoTitle}
                 </h2>
                 <span
                   className={`text-[9px] text-muted-foreground font-mono transition-opacity ${
@@ -290,12 +430,12 @@ export default function InterviewPage() {
               value={state.freeMemo}
               onChange={handleMemoChange}
               className="flex-1 w-full p-6 bg-transparent resize-none focus-visible:ring-0 border-0 text-base leading-relaxed font-mono rounded-none"
-              placeholder="議事メモを自由に入力..."
+              placeholder={`${memoTitle}を自由に入力...`}
             />
           </div>
         </div>
 
-        <aside className="w-full md:w-96 h-56 md:h-auto bg-card border-t md:border-t-0 md:border-l flex flex-col z-10 shrink-0 shadow-lg">
+        <aside className="w-full lg:w-96 h-56 lg:h-auto bg-card border-t lg:border-t-0 lg:border-l flex flex-col z-10 shrink-0 shadow-lg">
           <TranscriptLog
             logs={state.logs}
             interimText={interimText}

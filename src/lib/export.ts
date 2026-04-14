@@ -1,8 +1,9 @@
-import type { LogItem } from "@/hooks/useInterviewStore";
+import type { InterviewAnalysis, LogItem } from "@/hooks/useInterviewStore";
 
 export function downloadAsWord(
   logs: LogItem[],
-  freeMemo: string
+  freeMemo: string,
+  interviewAnalysis?: InterviewAnalysis | null
 ): void {
   const dateStr = new Date().toLocaleDateString("ja-JP");
   const fileDate = dateStr.replace(/\//g, "-");
@@ -14,6 +15,21 @@ export function downloadAsWord(
     })
     .join("");
 
+  const analysisHtml = interviewAnalysis
+    ? `
+      <h2>履歴書の要約</h2>
+      <p>${escapeHtml(interviewAnalysis.resumeSummary).replace(/\n/g, "<br>")}</p>
+      <h2>職務経歴書の要約</h2>
+      <p>${escapeHtml(interviewAnalysis.workHistorySummary).replace(/\n/g, "<br>")}</p>
+      <h2>質問候補</h2>
+      <ol>
+        ${interviewAnalysis.suggestedQuestions
+          .map((question) => `<li>${escapeHtml(question)}</li>`)
+          .join("")}
+      </ol>
+    `
+    : "";
+
   const content = `
     <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
     <head><meta charset='utf-8'><title>議事録</title></head>
@@ -21,6 +37,7 @@ export function downloadAsWord(
       <h1>議事録 (${dateStr})</h1>
       <h2>メモ</h2>
       <p>${escapeHtml(freeMemo).replace(/\n/g, "<br>")}</p>
+      ${analysisHtml}
       <h2>会話ログ</h2>
       ${logRows || "<p>会話ログはありません。</p>"}
     </body></html>`;

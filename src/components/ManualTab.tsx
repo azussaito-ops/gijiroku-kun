@@ -1,6 +1,18 @@
 "use client";
 
-import { FileDown, Headphones, HelpCircle, KeyRound, Mic, RotateCcw, Settings, StickyNote } from "lucide-react";
+import {
+  Briefcase,
+  FileDown,
+  FileText,
+  Headphones,
+  HelpCircle,
+  KeyRound,
+  Mic,
+  RotateCcw,
+  Settings,
+  StickyNote,
+  Users,
+} from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 interface ManualSection {
@@ -16,12 +28,29 @@ const sections: ManualSection[] = [
     steps: [
       "右上の「設定」を開きます。",
       "相手側の音声も文字起こしする場合は、Groq APIキーを入力します。",
-      "自分のマイクだけを使う場合は、Groq APIキーなしでも使えます。",
+      "面接モードで履歴書と職務経歴書を要約する場合は、Gemini APIキーを入力します。",
+    ],
+  },
+  {
+    icon: <Users className="h-4 w-4 text-emerald-500" />,
+    title: "2. MTGモード",
+    steps: [
+      "録音、メモ、会話ログ、出力だけを使う軽量モードです。",
+      "議事メモは中央のメモ欄に自由に入力できます。",
+    ],
+  },
+  {
+    icon: <Briefcase className="h-4 w-4 text-blue-500" />,
+    title: "3. 面接モード",
+    steps: [
+      "履歴書と職務経歴書をPDFまたはTXTでアップロードします。",
+      "「要約・質問を作成」を押すと、要約と質問候補が作られます。",
+      "録音、面接メモ、会話ログはMTGモードと同じように使えます。",
     ],
   },
   {
     icon: <Mic className="h-4 w-4 text-red-500" />,
-    title: "2. 録音と文字起こし",
+    title: "4. 録音と文字起こし",
     steps: [
       "「マイク録音開始」で自分の声を文字起こしします。",
       "「相手の声も取得」を使うと、ブラウザタブや会議アプリの音声も文字起こしできます。",
@@ -29,21 +58,12 @@ const sections: ManualSection[] = [
     ],
   },
   {
-    icon: <StickyNote className="h-4 w-4 text-emerald-500" />,
-    title: "3. メモ",
-    steps: [
-      "中央のMTGメモ欄に議題、決定事項、TODOなどを自由に入力します。",
-      "メモはブラウザに自動保存されます。",
-      "メモ欄右上のゴミ箱アイコンでメモだけを消去できます。",
-    ],
-  },
-  {
     icon: <FileDown className="h-4 w-4 text-blue-500" />,
-    title: "4. 保存と出力",
+    title: "5. 保存と出力",
     steps: [
-      "「コピー」でメモと会話ログをクリップボードにコピーできます。",
+      "「コピー」でメモ、要約、質問候補、会話ログをコピーできます。",
       "「TXT」で会話ログをテキストファイルとして保存できます。",
-      "「Word出力」でメモと会話ログをWord形式で保存できます。",
+      "「Word出力」でメモ、要約、質問候補、会話ログをWord形式で保存できます。",
     ],
   },
 ];
@@ -54,12 +74,12 @@ const faqs = [
     a: "「相手の声も取得」を押したあと、画面共有の選択画面で「音声を共有」を有効にしてください。",
   },
   {
-    q: "データはどこに保存されますか？",
-    a: "メモ、会話ログ、APIキーはブラウザのlocalStorageに保存されます。外部サーバーには保存されません。",
+    q: "履歴書や職務経歴書はどこに送られますか？",
+    a: "要約を作成するときだけ、入力したGemini APIキーを使ってGoogle Gemini APIに送信されます。このアプリのサーバーには保存されません。",
   },
   {
-    q: "全部消したい",
-    a: "右上の「リセット」を押すと、メモと会話ログをまとめて消去できます。APIキーなどの設定は保持されます。",
+    q: "データはどこに保存されますか？",
+    a: "メモ、会話ログ、APIキー、要約結果はブラウザのlocalStorageに保存されます。アップロードしたPDF本体は永続保存しません。",
   },
 ];
 
@@ -72,7 +92,7 @@ export default function ManualTab() {
           使い方
         </h2>
         <p className="text-xs text-muted-foreground">
-          録音、メモ、文字起こしログ、出力だけに絞った軽量版です。
+          MTGは軽く、面接は履歴書・職務経歴書の要約と質問候補を使えます。
         </p>
       </div>
 
@@ -89,6 +109,10 @@ export default function ManualTab() {
           <div className="flex items-center gap-2">
             <StickyNote className="h-3 w-3 text-muted-foreground" />
             <span>自動保存メモ</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <FileText className="h-3 w-3 text-muted-foreground" />
+            <span>履歴書・職務経歴書の要約</span>
           </div>
           <div className="flex items-center gap-2">
             <FileDown className="h-3 w-3 text-muted-foreground" />
