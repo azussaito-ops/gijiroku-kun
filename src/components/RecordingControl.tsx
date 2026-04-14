@@ -56,7 +56,7 @@ function AudioVisualizer({ analyser }: { analyser: AnalyserNode | null }) {
 
                 // 色: 音量に応じて緑〜黄色〜赤
                 // Tailwind colorsに近い色味で
-                ctx.fillStyle = `rgb(99, 102, 241)`; // Indigo-500
+                ctx.fillStyle = `rgb(5, 150, 105)`; // Emerald-600
                 ctx.globalAlpha = 0.6;
 
                 ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
@@ -207,7 +207,7 @@ export default function RecordingControl({
                 variant={micActive ? "destructive" : "default"}
                 className={`w-full py-6 text-lg font-bold shadow-lg transition-all ${micActive
                     ? "animate-pulse bg-red-600 hover:bg-red-700"
-                    : "bg-indigo-600 hover:bg-indigo-700"
+                    : "bg-emerald-700 hover:bg-emerald-800"
                     }`}
             >
                 {micActive ? (

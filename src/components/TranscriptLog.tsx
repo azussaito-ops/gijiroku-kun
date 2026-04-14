@@ -38,7 +38,7 @@ function TranscriptLog({
     }, [logs.length, interimText]);
 
     return (
-        <div className="flex flex-col h-full min-h-0 bg-slate-50 dark:bg-zinc-950/50">
+        <div className="flex flex-col h-full min-h-0 bg-neutral-50 dark:bg-zinc-950/50">
             {/* ヘッダー */}
             <div className="h-8 bg-card border-b flex items-center justify-between px-3 shrink-0 shadow-sm z-10">
                 <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
@@ -89,7 +89,7 @@ function TranscriptLog({
                                     {/* アバターアイコン */}
                                     <div
                                         className={`h-6 w-6 rounded-full flex items-center justify-center shrink-0 mt-1 shadow-sm ${isSelf
-                                            ? "bg-indigo-600 text-white"
+                                            ? "bg-emerald-700 text-white"
                                             : "bg-emerald-600 text-white"
                                             }`}
                                     >
@@ -109,7 +109,7 @@ function TranscriptLog({
                                         </div>
                                         <div
                                             className={`px-3 py-2 rounded-2xl text-xs leading-relaxed shadow-sm break-words whitespace-pre-wrap ${isSelf
-                                                ? "bg-indigo-600 text-white rounded-tr-none"
+                                                ? "bg-emerald-700 text-white rounded-tr-none"
                                                 : "bg-white dark:bg-zinc-800 text-foreground border rounded-tl-none"
                                                 }`}
                                         >
@@ -126,10 +126,10 @@ function TranscriptLog({
                 {interimText && (
                     <div className="flex w-full justify-end animate-pulse">
                         <div className="flex max-w-[85%] gap-2 flex-row-reverse">
-                            <div className="h-6 w-6 rounded-full bg-indigo-600/50 flex items-center justify-center shrink-0 mt-1">
+                            <div className="h-6 w-6 rounded-full bg-emerald-700/50 flex items-center justify-center shrink-0 mt-1">
                                 <Mic className="h-3.5 w-3.5 text-white" />
                             </div>
-                            <div className="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-900 dark:text-indigo-100 px-3 py-2 rounded-2xl rounded-tr-none text-xs border border-indigo-100 dark:border-indigo-800">
+                            <div className="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-900 dark:text-emerald-100 px-3 py-2 rounded-2xl rounded-tr-none text-xs border border-emerald-100 dark:border-emerald-800">
                                 <span className="opacity-70">{interimText}</span>...
                             </div>
                         </div>

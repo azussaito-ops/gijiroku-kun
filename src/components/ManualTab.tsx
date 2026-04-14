@@ -23,7 +23,7 @@ interface ManualSection {
 
 const sections: ManualSection[] = [
   {
-    icon: <Settings className="h-4 w-4 text-indigo-500" />,
+    icon: <Settings className="h-4 w-4 text-emerald-700" />,
     title: "1. 初期設定",
     steps: [
       "右上の「設定」を開きます。",
@@ -40,7 +40,7 @@ const sections: ManualSection[] = [
     ],
   },
   {
-    icon: <Briefcase className="h-4 w-4 text-blue-500" />,
+    icon: <Briefcase className="h-4 w-4 text-teal-700" />,
     title: "3. 面接モード",
     steps: [
       "履歴書と職務経歴書をPDFまたはTXTでアップロードします。",
@@ -58,7 +58,7 @@ const sections: ManualSection[] = [
     ],
   },
   {
-    icon: <FileDown className="h-4 w-4 text-blue-500" />,
+    icon: <FileDown className="h-4 w-4 text-emerald-700" />,
     title: "5. 保存と出力",
     steps: [
       "「コピー」でメモ、要約、質問候補、会話ログをコピーできます。",
@@ -88,7 +88,7 @@ export default function ManualTab() {
     <div className="h-full overflow-y-auto p-5 space-y-6 bg-background/50">
       <div className="space-y-2">
         <h2 className="text-lg font-bold flex items-center gap-2">
-          <HelpCircle className="h-5 w-5 text-indigo-500" />
+          <HelpCircle className="h-5 w-5 text-emerald-700" />
           使い方
         </h2>
         <p className="text-xs text-muted-foreground">

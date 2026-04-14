@@ -101,7 +101,11 @@ function toPersistedState(state: InterviewState): InterviewState {
   return {
     ...state,
     resumeData: "",
+    resumeFileName: state.resumeText ? state.resumeFileName : "",
+    resumeMimeType: state.resumeText ? state.resumeMimeType : "",
     workHistoryData: "",
+    workHistoryFileName: state.workHistoryText ? state.workHistoryFileName : "",
+    workHistoryMimeType: state.workHistoryText ? state.workHistoryMimeType : "",
   };
 }
 

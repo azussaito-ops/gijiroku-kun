@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition, type CSSProperties } from "react";
 import dynamic from "next/dynamic";
 import {
   Briefcase,
@@ -67,13 +67,15 @@ export default function InterviewPage() {
     resetAll,
   } = useInterviewStore();
 
-  const [appMode, setAppMode] = useState<AppMode>("meeting");
+  const [appMode, setAppMode] = useState<AppMode>("interview");
   const [interimText, setInterimText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [saveVisible, setSaveVisible] = useState(false);
   const [isAnalyzingDocuments, setIsAnalyzingDocuments] = useState(false);
+  const [leftPaneWidth, setLeftPaneWidth] = useState(420);
   const [, startInterimTransition] = useTransition();
   const saveStatusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isResizingLeftPane = useRef(false);
 
   const showSaveStatus = useCallback(() => {
     setSaveVisible(true);
@@ -92,6 +94,38 @@ export default function InterviewPage() {
         clearTimeout(saveStatusTimer.current);
       }
     };
+  }, []);
+
+  useEffect(() => {
+    const handleMouseMove = (event: MouseEvent) => {
+      if (!isResizingLeftPane.current) return;
+
+      const maxWidth = Math.max(340, Math.min(720, window.innerWidth - 560));
+      const nextWidth = Math.max(320, Math.min(event.clientX, maxWidth));
+      setLeftPaneWidth(nextWidth);
+    };
+
+    const handleMouseUp = () => {
+      if (!isResizingLeftPane.current) return;
+      isResizingLeftPane.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, []);
+
+  const startLeftPaneResize = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    isResizingLeftPane.current = true;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
   }, []);
 
   const handleInterimChange = useCallback((text: string) => {
@@ -278,7 +312,7 @@ export default function InterviewPage() {
                 appMode === "interview"
                   ? isRecording
                     ? "bg-white/20 text-white"
-                    : "bg-indigo-100 text-indigo-700"
+                    : "bg-emerald-100 text-emerald-700"
                   : isRecording
                     ? "text-white/70 hover:bg-white/10"
                     : "text-muted-foreground hover:bg-muted"
@@ -366,7 +400,7 @@ export default function InterviewPage() {
             className={`text-xs h-8 gap-1.5 shadow-sm ${
               isRecording
                 ? "bg-white/20 hover:bg-white/30 text-white border-white/30"
-                : "bg-blue-600 hover:bg-blue-700 text-white"
+                : "bg-emerald-700 hover:bg-emerald-800 text-white"
             }`}
             title="Word形式の議事録をダウンロード"
           >
@@ -378,16 +412,26 @@ export default function InterviewPage() {
 
       <main className="flex-1 flex flex-col lg:flex-row overflow-hidden">
         {appMode === "interview" && (
-          <aside className="w-full lg:w-96 h-[42vh] lg:h-auto border-b lg:border-b-0 lg:border-r shrink-0 overflow-hidden">
-            <InterviewDocuments
-              resumeFileName={state.resumeFileName}
-              workHistoryFileName={state.workHistoryFileName}
-              analysis={state.interviewAnalysis}
-              isAnalyzing={isAnalyzingDocuments}
-              onDocumentLoaded={handleDocumentLoaded}
-              onAnalyze={handleAnalyzeDocuments}
+          <>
+            <aside
+              className="w-full lg:w-[var(--left-pane-width)] h-[42vh] lg:h-auto border-b lg:border-b-0 lg:border-r shrink-0 overflow-hidden"
+              style={{ "--left-pane-width": `${leftPaneWidth}px` } as CSSProperties}
+            >
+              <InterviewDocuments
+                resumeFileName={state.resumeFileName}
+                workHistoryFileName={state.workHistoryFileName}
+                analysis={state.interviewAnalysis}
+                isAnalyzing={isAnalyzingDocuments}
+                onDocumentLoaded={handleDocumentLoaded}
+                onAnalyze={handleAnalyzeDocuments}
+              />
+            </aside>
+            <div
+              className="hidden lg:block w-1.5 cursor-col-resize bg-border hover:bg-emerald-500 transition-colors shrink-0"
+              onMouseDown={startLeftPaneResize}
+              title="面接準備ペインの幅を調整"
             />
-          </aside>
+          </>
         )}
 
         <div className="flex-1 flex flex-col min-w-0">

@@ -82,7 +82,7 @@ export default function SettingsDialog({
             API設定
           </DialogTitle>
           <DialogDescription>
-            APIキーはブラウザのlocalStorageに保存され、外部サーバーには保存されません。
+            APIキーは一度入力するとこのブラウザに保存されます。外部サーバーには保存されません。
           </DialogDescription>
         </DialogHeader>
 
@@ -149,7 +149,7 @@ function ApiKeyField({
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[10px] text-indigo-600 hover:underline flex items-center gap-1 shrink-0"
+          className="text-[10px] text-emerald-700 hover:underline flex items-center gap-1 shrink-0"
         >
           取得ページ <ExternalLink className="h-3 w-3" />
         </a>
