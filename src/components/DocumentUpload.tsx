@@ -6,8 +6,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useMemo } from "react";
-import { FileText, Upload, Loader2, CheckCircle, ChevronDown, ChevronRight } from "lucide-react";
-import { extractTextFromPdf } from "@/lib/pdf-parser";
+import { FileText, Upload, Loader2, CheckCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface DocumentUploadProps {

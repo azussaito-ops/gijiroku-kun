@@ -51,26 +51,32 @@ function getDefaultTemplates(): EvalTemplate[] {
     ];
 }
 
+function getInitialTemplates(): EvalTemplate[] {
+    if (typeof window === "undefined") {
+        return getDefaultTemplates();
+    }
+    try {
+        const saved = localStorage.getItem(TEMPLATE_STORAGE_KEY);
+        if (saved) {
+            const parsed = JSON.parse(saved) as EvalTemplate[];
+            if (parsed.length > 0) {
+                return parsed;
+            }
+        }
+    } catch (error) {
+        console.error("テンプレート読み込みエラー:", error);
+    }
+    return getDefaultTemplates();
+}
+
 /**
  * 評価テンプレート管理フック
  */
 export function useEvalTemplates() {
-    const [templates, setTemplates] = useState<EvalTemplate[]>(getDefaultTemplates);
+    const [templates, setTemplates] = useState<EvalTemplate[]>(getInitialTemplates);
     const isInitialized = useRef(false);
-
-    // localStorage から読み込み
+    // Initial mount enables persistence.
     useEffect(() => {
-        try {
-            const saved = localStorage.getItem(TEMPLATE_STORAGE_KEY);
-            if (saved) {
-                const parsed = JSON.parse(saved) as EvalTemplate[];
-                if (parsed.length > 0) {
-                    setTemplates(parsed);
-                }
-            }
-        } catch (error) {
-            console.error("テンプレート読み込みエラー:", error);
-        }
         isInitialized.current = true;
     }, []);
 

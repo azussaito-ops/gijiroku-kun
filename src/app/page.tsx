@@ -5,10 +5,10 @@
  */
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useTransition } from "react";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
 import {
   Headset,
   FileDown,
@@ -17,21 +17,11 @@ import {
   ChevronDown,
   StickyNote,
   Target,
-  BookOpen,
   Copy,
   Users,
   Briefcase,
   HelpCircle,
 } from "lucide-react";
-import RecordingControl from "@/components/RecordingControl";
-import DocumentUpload from "@/components/DocumentUpload";
-import EvaluationSheet from "@/components/EvaluationSheet";
-import TemplateEditor from "@/components/TemplateEditor";
-import TopicAnalysis from "@/components/TopicAnalysis";
-import TranscriptLog from "@/components/TranscriptLog";
-import CandidateProfile from "@/components/CandidateProfile";
-import SettingsDialog from "@/components/SettingsDialog";
-import ManualTab from "@/components/ManualTab";
 import {
   Dialog,
   DialogContent,
@@ -53,6 +43,45 @@ import { downloadAsWord, downloadAsText } from "@/lib/export";
 
 type AppMode = "interview" | "meeting";
 
+const PanelSkeleton = () => (
+  <div className="h-24 animate-pulse rounded-md border bg-muted/40" />
+);
+
+const RecordingControl = dynamic(() => import("@/components/RecordingControl"), {
+  ssr: false,
+  loading: PanelSkeleton,
+});
+const DocumentUpload = dynamic(() => import("@/components/DocumentUpload"), {
+  ssr: false,
+  loading: PanelSkeleton,
+});
+const EvaluationSheet = dynamic(() => import("@/components/EvaluationSheet"), {
+  ssr: false,
+  loading: PanelSkeleton,
+});
+const TemplateEditor = dynamic(() => import("@/components/TemplateEditor"), {
+  ssr: false,
+});
+const TopicAnalysis = dynamic(() => import("@/components/TopicAnalysis"), {
+  ssr: false,
+  loading: PanelSkeleton,
+});
+const TranscriptLog = dynamic(() => import("@/components/TranscriptLog"), {
+  ssr: false,
+  loading: PanelSkeleton,
+});
+const CandidateProfile = dynamic(() => import("@/components/CandidateProfile"), {
+  ssr: false,
+  loading: PanelSkeleton,
+});
+const SettingsDialog = dynamic(() => import("@/components/SettingsDialog"), {
+  ssr: false,
+});
+const ManualTab = dynamic(() => import("@/components/ManualTab"), {
+  ssr: false,
+  loading: PanelSkeleton,
+});
+
 export default function InterviewPage() {
   const {
     state,
@@ -60,15 +89,13 @@ export default function InterviewPage() {
     updateEvaluation,
     applyTemplate,
     updateFreeMemo,
-    setDocumentText,
-    setDocumentHTML, // 後方互換性のため残す
+    setDocumentData,
     setCandidateProfile,
     clearLogs,
     flushAiBuffer,
     setApiKey,
     setGeminiModel,
     setGroqApiKey,
-    setScoreOptions,
     resetAll,
     deleteEvaluationItem,
   } = useInterviewStore();
@@ -87,15 +114,36 @@ export default function InterviewPage() {
   const [sidebarWidth, setSidebarWidth] = useState(600);
   const [saveVisible, setSaveVisible] = useState(false);
   const [isAnalyzingProfile, setIsAnalyzingProfile] = useState(false);
-  const [appMode, setAppMode] = useState<AppMode>("interview");
+  const [appMode, setAppMode] = useState<AppMode>("meeting");
+  const [, startInterimTransition] = useTransition();
   const isResizing = useRef(false);
+  const saveStatusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 保存完了表示
   const showSaveStatus = useCallback(() => {
     setSaveVisible(true);
-    const timer = setTimeout(() => setSaveVisible(false), 1000);
-    return () => clearTimeout(timer);
+    if (saveStatusTimer.current) {
+      clearTimeout(saveStatusTimer.current);
+    }
+    saveStatusTimer.current = setTimeout(() => {
+      setSaveVisible(false);
+      saveStatusTimer.current = null;
+    }, 1000);
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (saveStatusTimer.current) {
+        clearTimeout(saveStatusTimer.current);
+      }
+    };
+  }, []);
+
+  const handleInterimChange = useCallback((text: string) => {
+    startInterimTransition(() => {
+      setInterimText(text);
+    });
+  }, [startInterimTransition]);
 
   // フリーメモ更新
   const handleMemoChange = useCallback(
@@ -117,21 +165,7 @@ export default function InterviewPage() {
   // 書類アップロード処理（統合プロフィール生成）
   const handleDocumentExtracted = useCallback(
     async (type: "resume" | "es", text: string, base64?: string) => {
-      // 互換性のため setDocumentText は残っているが、新しい setDocumentData を使うべき
-      // useInterviewStore 側で setDocumentData を公開する必要あり
-      // ここでは setDocumentData がまだ公開されていない場合を考慮して、
-      // 既存の setDocumentText を使いつつ、anyキャストで無理やり呼ぶか、
-      // ストアの型定義を信じて setDocumentData を呼ぶ。
-      // 先ほどの修正で setDocumentData は公開されているはず。
-
-      // @ts-ignore - setDocumentData が型定義に含まれていない可能性があるため
-      const { setDocumentData } = useInterviewStore.getState ? useInterviewStore.getState() : { setDocumentData: null };
-
-      if (setDocumentData) {
-        setDocumentData(type, text, base64);
-      } else {
-        setDocumentText(type, text);
-      }
+      setDocumentData(type, text, base64);
 
       // プロフィール生成トリガー
       console.log("書類データ受信:", type, "テキスト長:", text.length, "Base64あり:", !!base64);
@@ -183,7 +217,7 @@ export default function InterviewPage() {
         console.warn("解析対象のデータがありません");
       }
     },
-    [state.apiKey, state.geminiModel, state.resumeText, state.esText, state.resumeData, state.esData, setDocumentText, setCandidateProfile]
+    [state.apiKey, state.geminiModel, state.resumeText, state.esText, state.resumeData, state.esData, isAnalyzingProfile, setDocumentData, setCandidateProfile]
   );
 
   // トピック・質問抽出
@@ -476,7 +510,7 @@ export default function InterviewPage() {
                 <RecordingControl
                   onSelfTranscript={(text) => addLog(text, "self")}
                   onOtherTranscript={(text) => addLog(text, "other")}
-                  onInterimChange={setInterimText}
+                  onInterimChange={handleInterimChange}
                   onRecordingStateChange={setIsRecording}
                   groqApiKey={state.groqApiKey}
                 />
@@ -697,7 +731,7 @@ export default function InterviewPage() {
                 <RecordingControl
                   onSelfTranscript={(text) => addLog(text, "self")}
                   onOtherTranscript={(text) => addLog(text, "other")}
-                  onInterimChange={setInterimText}
+                  onInterimChange={handleInterimChange}
                   onRecordingStateChange={setIsRecording}
                   groqApiKey={state.groqApiKey}
                 />

@@ -2,6 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "export",
+  turbopack: {
+    root: process.cwd(),
+  },
+  experimental: {
+    optimizePackageImports: ["lucide-react"],
+  },
 
   // GitHub Pagesで画像を表示するために必要
   images: {

@@ -156,7 +156,6 @@ export default function SettingsDialog({
     geminiModel,
     groqApiKey,
     onApiKeyChange,
-    onGeminiModelChange,
     onGroqApiKeyChange,
 }: SettingsDialogProps) {
     const [showApiKey, setShowApiKey] = useState(false);

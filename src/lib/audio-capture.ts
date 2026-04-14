@@ -19,6 +19,14 @@ export interface SystemAudioChunk {
     timestamp: number;
 }
 
+declare global {
+    interface Window {
+        webkitAudioContext?: typeof AudioContext;
+    }
+}
+
+const SYSTEM_AUDIO_CHUNK_MS = 8000;
+
 /**
  * 音声キャプチャエンジン
  * マイクとシステム音声の取得・管理を担当
@@ -80,7 +88,10 @@ export class AudioCaptureEngine {
         try {
             // AudioContextの初期化（ブラウザ互換性対応）
             if (!this.audioContext) {
-                const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContextClass) {
+                    return false;
+                }
                 this.audioContext = new AudioContextClass();
             }
             if (this.audioContext && this.audioContext.state === 'suspended') {
@@ -229,7 +240,7 @@ export class AudioCaptureEngine {
             }
 
             this.activeRecorderIndex = nextIndex;
-        }, 3000);
+        }, SYSTEM_AUDIO_CHUNK_MS);
     }
 
     /**
@@ -254,7 +265,7 @@ export class AudioCaptureEngine {
             }
         };
 
-        recorder.start(3000);
+        recorder.start(SYSTEM_AUDIO_CHUNK_MS);
         this.recorders = [recorder]; // 管理配列に入れておく（stop時用）
     }
 

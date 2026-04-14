@@ -58,6 +58,7 @@ export interface InterviewState {
 }
 
 const STORAGE_KEY = "interview_hub_nextjs_v1";
+const SAVE_DEBOUNCE_MS = 500;
 
 /** デフォルトのスコア選択肢（5段階） */
 export const DEFAULT_SCORE_OPTIONS: ScoreOption[] = [
@@ -95,44 +96,95 @@ function getDefaultState(): InterviewState {
     };
 }
 
+function toPersistedState(state: InterviewState): InterviewState {
+    return {
+        ...state,
+        resumeData: "",
+        esData: "",
+        aiBuffer: "",
+    };
+}
+
+function getInitialState(): InterviewState {
+    const defaultState = getDefaultState();
+    if (typeof window === "undefined") {
+        return defaultState;
+    }
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            const parsed = JSON.parse(saved) as Partial<InterviewState>;
+            if (!parsed.geminiModel || parsed.geminiModel === "gemini-2.0-flash" || parsed.geminiModel.includes("gemini")) {
+                parsed.geminiModel = "gemini-3-flash-preview";
+            }
+            return {
+                ...defaultState,
+                ...parsed,
+                resumeData: "",
+                esData: "",
+                aiBuffer: "",
+            };
+        }
+    } catch (error) {
+        console.error("データ読み込みエラー:", error);
+    }
+    return defaultState;
+}
+
 /**
  * 面接データの状態管理フック
  * 全データを localStorage に自動保存する
  */
 export function useInterviewStore() {
-    const [state, setState] = useState<InterviewState>(getDefaultState);
+    const [state, setState] = useState<InterviewState>(getInitialState);
     const isInitialized = useRef(false);
+    const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // localStorage からデータを読み込む（初回マウント時のみ）
+    // Initial mount enables persistence.
     useEffect(() => {
-        try {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                const parsed = JSON.parse(saved) as Partial<InterviewState>;
-                // 既存データに geminiModel がない、または古いモデルの場合の強制アップデート
-                // ユーザー要望により gemini-3-flash-preview に固定
-                if (!parsed.geminiModel || parsed.geminiModel === "gemini-2.0-flash" || parsed.geminiModel.includes("gemini")) {
-                    parsed.geminiModel = "gemini-3-flash-preview";
-                }
-                setState((prev) => ({ ...prev, ...parsed }));
-            }
-        } catch (error) {
-            console.error("データ読み込みエラー:", error);
-        }
         isInitialized.current = true;
     }, []);
 
-    // state が変わるたびに localStorage に保存
     useEffect(() => {
         if (!isInitialized.current) return;
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        } catch (error) {
-            console.error("データ保存エラー:", error);
+        if (saveTimer.current) {
+            clearTimeout(saveTimer.current);
         }
+        saveTimer.current = setTimeout(() => {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(toPersistedState(state)));
+            } catch (error) {
+                console.error("データ保存エラー:", error);
+            }
+        }, SAVE_DEBOUNCE_MS);
+
+        return () => {
+            if (saveTimer.current) {
+                clearTimeout(saveTimer.current);
+            }
+        };
     }, [state]);
 
-    /** ログを追加する */
+    useEffect(() => {
+        const handlePageHide = () => {
+            if (!isInitialized.current) return;
+            if (saveTimer.current) {
+                clearTimeout(saveTimer.current);
+                saveTimer.current = null;
+            }
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(toPersistedState(state)));
+            } catch (error) {
+                console.error("データ保存エラー:", error);
+            }
+        };
+
+        window.addEventListener("pagehide", handlePageHide);
+        return () => {
+            window.removeEventListener("pagehide", handlePageHide);
+        };
+    }, [state]);
+
     const addLog = useCallback((text: string, speaker: "self" | "other" = "self") => {
         const time = new Date().toLocaleTimeString("ja-JP", {
             hour: "2-digit",

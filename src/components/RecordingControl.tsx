@@ -55,10 +55,6 @@ function AudioVisualizer({ analyser }: { analyser: AnalyserNode | null }) {
                 barHeight = (dataArray[i] / 255) * canvas.height;
 
                 // 色: 音量に応じて緑〜黄色〜赤
-                const r = barHeight + (25 * (i / bufferLength));
-                const g = 250 * (i / bufferLength);
-                const b = 50;
-
                 // Tailwind colorsに近い色味で
                 ctx.fillStyle = `rgb(99, 102, 241)`; // Indigo-500
                 ctx.globalAlpha = 0.6;

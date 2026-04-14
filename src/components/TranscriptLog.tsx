@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { useEffect, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import { Mic, Monitor, User, Bot, Trash2 } from "lucide-react";
 import type { LogItem } from "@/hooks/useInterviewStore";
 
@@ -17,7 +17,7 @@ interface TranscriptLogProps {
     onClear: () => void;
 }
 
-export default function TranscriptLog({
+function TranscriptLog({
     logs,
     interimText,
     onClear,
@@ -26,13 +26,16 @@ export default function TranscriptLog({
 
     // 新しいログが追加されたら自動スクロール
     useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTo({
-                top: scrollRef.current.scrollHeight,
-                behavior: "smooth",
-            });
-        }
-    }, [logs, interimText]);
+        const frame = requestAnimationFrame(() => {
+            if (scrollRef.current) {
+                scrollRef.current.scrollTo({
+                    top: scrollRef.current.scrollHeight,
+                    behavior: "auto",
+                });
+            }
+        });
+        return () => cancelAnimationFrame(frame);
+    }, [logs.length, interimText]);
 
     return (
         <div className="flex flex-col h-full min-h-0 bg-slate-50 dark:bg-zinc-950/50">
@@ -77,6 +80,7 @@ export default function TranscriptLog({
                             <div
                                 key={index}
                                 className={`flex w-full ${isSelf ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-2 duration-300`}
+                                style={{ contentVisibility: "auto", containIntrinsicSize: "0 72px" }}
                             >
                                 <div
                                     className={`flex max-w-[85%] md:max-w-[75%] gap-2 ${isSelf ? "flex-row-reverse" : "flex-row"
@@ -135,3 +139,5 @@ export default function TranscriptLog({
         </div>
     );
 }
+
+export default memo(TranscriptLog);

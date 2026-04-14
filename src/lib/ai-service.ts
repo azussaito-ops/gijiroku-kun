@@ -18,6 +18,10 @@ export interface DocumentAnalysisResult {
     deepDiveHTML: string;
 }
 
+type GeminiRequestPart =
+    | { text: string }
+    | { inlineData: { mimeType: string; data: string } };
+
 // ===================================================
 // Gemini API 関連
 // ===================================================
@@ -42,7 +46,7 @@ async function callGemini(
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-    const parts: any[] = [{ text: prompt }];
+    const parts: GeminiRequestPart[] = [{ text: prompt }];
 
     // インラインデータがあれば追加
     if (inlineData && inlineData.length > 0) {
@@ -73,7 +77,7 @@ async function callGemini(
                 if (errorJson.error?.message) {
                     errorMessage += ` - ${errorJson.error.message}`;
                 }
-            } catch (e) {
+            } catch {
                 errorMessage += ` - ${errorText}`;
             }
             throw new Error(errorMessage);
@@ -116,7 +120,7 @@ export async function testGeminiConnection(apiKey: string, model: string = "gemi
 
     try {
         const start = Date.now();
-        const result = await callGemini("Hello, just say 'OK'.", apiKey);
+        const result = await callGemini("Hello, just say 'OK'.", apiKey, model);
         const duration = Date.now() - start;
 
         return { success: true, message: `接続成功 (${duration}ms): ${result}` };

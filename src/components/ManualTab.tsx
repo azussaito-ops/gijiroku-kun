@@ -8,8 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
     Mic,
-    Monitor,
-    FileUp,
     Brain,
     FileDown,
     Settings,
