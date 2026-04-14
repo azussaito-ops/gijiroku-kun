@@ -249,6 +249,10 @@ export default function RecordingControl({
                 )}
             </div>
 
+            <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs leading-relaxed text-emerald-900">
+                イヤフォン利用時は、相手の声がマイクに回り込みません。相手の声は「相手の声も取得」から共有し、共有画面で「音声を共有」を有効にしてください。
+            </p>
+
             {/* ステータスバッジ */}
             <div className="flex gap-2 flex-wrap">
                 <Badge variant={micActive ? "default" : "secondary"} className="text-xs">
