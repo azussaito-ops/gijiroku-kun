@@ -47,9 +47,6 @@ export class AudioCaptureEngine {
     private destinationNode: MediaStreamAudioDestinationNode | null = null;
     private keepAliveOscillator: OscillatorNode | null = null;
 
-    /** 音声解析用ノード（可視化に使用） */
-    public analyserNode: AnalyserNode | null = null;
-
     private onChunkCallback: ((chunk: SystemAudioChunk) => void) | null = null;
     private onStateChange: ((state: AudioCaptureState) => void) | null = null;
 
@@ -152,15 +149,9 @@ export class AudioCaptureEngine {
             this.inputGainNode = this.audioContext.createGain();
             this.inputGainNode.gain.value = 5.0; // システム音量は小さい傾向があるため5倍に増幅
 
-            // 解析用ノード作成
-            this.analyserNode = this.audioContext.createAnalyser();
-            this.analyserNode.fftSize = 256;
-
-            // source -> inputGain -> destination & analyser
+            // source -> inputGain -> destination
             this.sourceNode.connect(this.inputGainNode);
             this.inputGainNode.connect(this.destinationNode);
-            this.inputGainNode.connect(this.analyserNode);
-
             // Keep-Alive用オシレーター（ごく微細なノイズを混ぜてストリームを持続させる）
             this.keepAliveOscillator = this.audioContext.createOscillator();
             const gainNode = this.audioContext.createGain();
@@ -310,10 +301,6 @@ export class AudioCaptureEngine {
         if (this.inputGainNode) {
             this.inputGainNode.disconnect();
             this.inputGainNode = null;
-        }
-        if (this.analyserNode) {
-            this.analyserNode.disconnect();
-            this.analyserNode = null;
         }
         // AudioContextは使い回すのでcloseしない（あるいはアプリ終了時のみ）
 
