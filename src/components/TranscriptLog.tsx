@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { memo, useEffect, useRef } from "react";
+import { memo, useEffect, useMemo, useRef } from "react";
 import { Mic, Monitor, User, Bot, Trash2 } from "lucide-react";
 import type { LogItem } from "@/hooks/useInterviewStore";
 
@@ -23,6 +23,11 @@ function TranscriptLog({
     onClear,
 }: TranscriptLogProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
+    const visibleLogs = useMemo(
+        () => logs.length > MAX_VISIBLE_LOGS ? logs.slice(-MAX_VISIBLE_LOGS) : logs,
+        [logs]
+    );
+    const hiddenLogCount = logs.length - visibleLogs.length;
 
     // 新しいログが追加されたら自動スクロール
     useEffect(() => {
@@ -74,7 +79,13 @@ function TranscriptLog({
                         </p>
                     </div>
                 ) : (
-                    logs.map((log, index) => {
+                    <>
+                    {hiddenLogCount > 0 && (
+                        <div className="rounded-md border bg-muted/60 px-3 py-2 text-center text-[10px] text-muted-foreground">
+                            表示負荷を抑えるため、古いログ {hiddenLogCount} 件を折りたたんでいます。コピーとダウンロードには全件含まれます。
+                        </div>
+                    )}
+                    {visibleLogs.map((log, index) => {
                         const isSelf = log.speaker === "self";
                         return (
                             <div
@@ -119,7 +130,8 @@ function TranscriptLog({
                                 </div>
                             </div>
                         );
-                    })
+                    })}
+                    </>
                 )}
 
                 {/* インテリム（入力中）表示 - 常に自分側の下に表示 */}
@@ -139,5 +151,7 @@ function TranscriptLog({
         </div>
     );
 }
+
+const MAX_VISIBLE_LOGS = 200;
 
 export default memo(TranscriptLog);

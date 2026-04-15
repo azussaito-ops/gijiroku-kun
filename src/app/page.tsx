@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useTransition, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import dynamic from "next/dynamic";
 import {
   Briefcase,
@@ -24,6 +24,7 @@ import { useInterviewStore, type DocumentPayload } from "@/hooks/useInterviewSto
 import { downloadAsText, downloadAsWord } from "@/lib/export";
 
 type AppMode = "meeting" | "interview";
+const INTERIM_UPDATE_MS = 120;
 
 const PanelSkeleton = () => (
   <div className="h-24 animate-pulse rounded-md border bg-muted/40" />
@@ -73,8 +74,9 @@ export default function InterviewPage() {
   const [saveVisible, setSaveVisible] = useState(false);
   const [isAnalyzingDocuments, setIsAnalyzingDocuments] = useState(false);
   const [leftPaneWidth, setLeftPaneWidth] = useState(420);
-  const [, startInterimTransition] = useTransition();
   const saveStatusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const interimTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingInterimText = useRef("");
   const isResizingLeftPane = useRef(false);
 
   const showSaveStatus = useCallback(() => {
@@ -92,6 +94,9 @@ export default function InterviewPage() {
     return () => {
       if (saveStatusTimer.current) {
         clearTimeout(saveStatusTimer.current);
+      }
+      if (interimTimer.current) {
+        clearTimeout(interimTimer.current);
       }
     };
   }, []);
@@ -128,11 +133,43 @@ export default function InterviewPage() {
     document.body.style.userSelect = "none";
   }, []);
 
+  const flushInterimText = useCallback(() => {
+    interimTimer.current = null;
+    setInterimText(pendingInterimText.current);
+  }, []);
+
   const handleInterimChange = useCallback((text: string) => {
-    startInterimTransition(() => {
-      setInterimText(text);
-    });
-  }, [startInterimTransition]);
+    pendingInterimText.current = text;
+
+    if (!text) {
+      if (interimTimer.current) {
+        clearTimeout(interimTimer.current);
+        interimTimer.current = null;
+      }
+      setInterimText("");
+      return;
+    }
+
+    if (!interimTimer.current) {
+      interimTimer.current = setTimeout(flushInterimText, INTERIM_UPDATE_MS);
+    }
+  }, [flushInterimText]);
+
+  const handleSelfTranscript = useCallback((text: string) => {
+    addLog(text, "self");
+  }, [addLog]);
+
+  const handleOtherTranscript = useCallback((text: string) => {
+    addLog(text, "other");
+  }, [addLog]);
+
+  const handleDownloadText = useCallback(() => {
+    downloadAsText(state.logs);
+  }, [state.logs]);
+
+  const handleDownloadWord = useCallback(() => {
+    downloadAsWord(state.logs, state.freeMemo, state.interviewAnalysis);
+  }, [state.logs, state.freeMemo, state.interviewAnalysis]);
 
   const handleMemoChange = useCallback(
     (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -402,7 +439,7 @@ export default function InterviewPage() {
           </Button>
 
           <Button
-            onClick={() => downloadAsText(state.logs)}
+            onClick={handleDownloadText}
             variant="secondary"
             size="sm"
             className={`text-xs h-8 gap-1.5 ${
@@ -417,7 +454,7 @@ export default function InterviewPage() {
           </Button>
 
           <Button
-            onClick={() => downloadAsWord(state.logs, state.freeMemo, state.interviewAnalysis)}
+            onClick={handleDownloadWord}
             size="sm"
             className={`text-xs h-8 gap-1.5 shadow-sm ${
               isRecording
@@ -459,8 +496,8 @@ export default function InterviewPage() {
         <div className="flex-1 flex flex-col min-w-0">
           <div className="p-4 border-b bg-muted/30 shrink-0">
             <RecordingControl
-              onSelfTranscript={(text) => addLog(text, "self")}
-              onOtherTranscript={(text) => addLog(text, "other")}
+              onSelfTranscript={handleSelfTranscript}
+              onOtherTranscript={handleOtherTranscript}
               onInterimChange={handleInterimChange}
               onRecordingStateChange={setIsRecording}
               groqApiKey={state.groqApiKey}
