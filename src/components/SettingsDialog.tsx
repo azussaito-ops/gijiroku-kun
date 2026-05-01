@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   Activity,
   CheckCircle2,
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { GEMINI_MODEL_OPTIONS } from "@/hooks/useInterviewStore";
 import { testGeminiConnection } from "@/lib/gemini-service";
 import { testGroqConnection } from "@/lib/groq-service";
 
@@ -31,6 +32,7 @@ interface SettingsDialogProps {
   geminiModel: string;
   onGroqApiKeyChange: (key: string) => void;
   onGeminiApiKeyChange: (key: string) => void;
+  onGeminiModelChange: (model: string) => void;
 }
 
 type TestStatus = "idle" | "testing" | "success" | "error";
@@ -41,6 +43,7 @@ export default function SettingsDialog({
   geminiModel,
   onGroqApiKeyChange,
   onGeminiApiKeyChange,
+  onGeminiModelChange,
 }: SettingsDialogProps) {
   const [showGroqKey, setShowGroqKey] = useState(false);
   const [showGeminiKey, setShowGeminiKey] = useState(false);
@@ -89,7 +92,7 @@ export default function SettingsDialog({
         <div className="space-y-4 mt-4">
           <ApiKeyField
             label="Gemini API（書類の基本情報・要約）"
-            description={`使用モデル: ${geminiModel}`}
+            description="モデルは接続テストで確認してから使えます。"
             href="https://aistudio.google.com/app/apikey"
             placeholder="AIza..."
             value={geminiApiKey}
@@ -98,7 +101,25 @@ export default function SettingsDialog({
             onVisibleChange={setShowGeminiKey}
             onChange={onGeminiApiKeyChange}
             onTest={testGemini}
-          />
+          >
+            <div className="space-y-1">
+              <Label htmlFor="gemini-model" className="text-xs">
+                使用モデル
+              </Label>
+              <select
+                id="gemini-model"
+                value={geminiModel}
+                onChange={(event) => onGeminiModelChange(event.target.value)}
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-xs shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+              >
+                {GEMINI_MODEL_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </ApiKeyField>
 
           <ApiKeyField
             label="Groq API（相手側音声の文字起こし）"
@@ -129,6 +150,7 @@ function ApiKeyField({
   onVisibleChange,
   onChange,
   onTest,
+  children,
 }: {
   label: string;
   description: string;
@@ -140,6 +162,7 @@ function ApiKeyField({
   onVisibleChange: (visible: boolean) => void;
   onChange: (value: string) => void;
   onTest: () => void;
+  children?: ReactNode;
 }) {
   return (
     <div className="space-y-3 p-4 bg-muted/30 rounded-lg border">
@@ -172,6 +195,8 @@ function ApiKeyField({
           {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>
       </div>
+
+      {children}
 
       <div className="flex items-center justify-between gap-3">
         <p className="text-[10px] text-muted-foreground">{description}</p>

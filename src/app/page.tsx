@@ -62,6 +62,7 @@ export default function InterviewPage() {
     clearLogs,
     setGroqApiKey,
     setGeminiApiKey,
+    setGeminiModel,
     setResumeDocument,
     setWorkHistoryDocument,
     setInterviewAnalysis,
@@ -391,6 +392,7 @@ export default function InterviewPage() {
               geminiModel={state.geminiModel}
               onGroqApiKeyChange={setGroqApiKey}
               onGeminiApiKeyChange={setGeminiApiKey}
+              onGeminiModelChange={setGeminiModel}
             />
 
             <Dialog>

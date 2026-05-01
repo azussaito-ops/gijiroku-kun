@@ -54,7 +54,21 @@ export interface InterviewState {
 
 const STORAGE_KEY = "interview_hub_nextjs_v1";
 const SAVE_DEBOUNCE_MS = 500;
-const DEFAULT_GEMINI_MODEL = "gemini-3-flash-preview";
+export const GEMINI_MODEL_OPTIONS = [
+  { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash（安定）" },
+  { value: "gemini-3-flash-preview", label: "Gemini 3 Flash Preview" },
+  { value: "gemini-3.1-flash-lite-preview", label: "Gemini 3.1 Flash Lite Preview" },
+  { value: "gemini-3.1-pro-preview", label: "Gemini 3.1 Pro Preview" },
+] as const;
+
+const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
+
+function normalizeGeminiModel(model: unknown): string {
+  return typeof model === "string" &&
+    GEMINI_MODEL_OPTIONS.some((option) => option.value === model)
+    ? model
+    : DEFAULT_GEMINI_MODEL;
+}
 
 function getDefaultState(): InterviewState {
   return {
@@ -93,10 +107,7 @@ function normalizeSavedState(saved: LegacySavedState): InterviewState {
         : typeof saved.apiKey === "string"
           ? saved.apiKey
           : "",
-    geminiModel:
-      typeof saved.geminiModel === "string" && saved.geminiModel
-        ? saved.geminiModel
-        : DEFAULT_GEMINI_MODEL,
+    geminiModel: normalizeGeminiModel(saved.geminiModel),
     resumeText: typeof saved.resumeText === "string" ? saved.resumeText : "",
     resumeFileName: typeof saved.resumeFileName === "string" ? saved.resumeFileName : "",
     workHistoryText:
@@ -224,7 +235,7 @@ export function useInterviewStore() {
   }, []);
 
   const setGeminiModel = useCallback((model: string) => {
-    setState((prev) => ({ ...prev, geminiModel: model || DEFAULT_GEMINI_MODEL }));
+    setState((prev) => ({ ...prev, geminiModel: normalizeGeminiModel(model) }));
   }, []);
 
   const setResumeDocument = useCallback((document: DocumentPayload) => {

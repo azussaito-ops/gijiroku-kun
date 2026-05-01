@@ -17,6 +17,21 @@ type GeminiRequestPart =
   | { text: string }
   | { inlineData: { mimeType: string; data: string } };
 
+const GEMINI_TIMEOUT_MS = 45_000;
+
+function getGeminiErrorMessage(status: number, body: string): string {
+  try {
+    const parsed = JSON.parse(body) as { error?: { message?: string; status?: string } };
+    const message = parsed.error?.message;
+    if (message) {
+      return `Gemini APIエラー (${status}): ${message}`;
+    }
+  } catch {
+    // Fall back to the raw body below.
+  }
+  return `Gemini APIエラー (${status}): ${body}`;
+}
+
 async function callGemini(
   prompt: string,
   apiKey: string,
@@ -37,20 +52,34 @@ async function callGemini(
     });
   });
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts }],
-      }),
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts }],
+        }),
+        signal: controller.signal,
+      }
+    );
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("Gemini APIの応答がタイムアウトしました。モデルを変更して再度お試しください。");
     }
-  );
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(`Gemini APIエラー (${response.status}): ${body}`);
+    throw new Error(getGeminiErrorMessage(response.status, body));
   }
 
   const data = await response.json();
