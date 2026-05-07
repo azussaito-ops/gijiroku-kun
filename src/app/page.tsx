@@ -190,7 +190,6 @@ export default function InterviewPage() {
   const handleReset = useCallback(() => {
     if (confirm("全データをリセットしますか？設定は保持されます。")) {
       resetAll();
-      window.location.reload();
     }
   }, [resetAll]);
 
