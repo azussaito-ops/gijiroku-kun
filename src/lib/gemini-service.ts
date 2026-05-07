@@ -18,6 +18,7 @@ type GeminiRequestPart =
   | { inlineData: { mimeType: string; data: string } };
 
 const GEMINI_TIMEOUT_MS = 45_000;
+const GEMINI_FALLBACK_MODEL = "gemini-3.1-flash-lite-preview";
 
 function getGeminiErrorMessage(status: number, body: string): string {
   try {
@@ -64,6 +65,11 @@ async function callGemini(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ parts }],
+          generationConfig: {
+            responseMimeType: "application/json",
+            temperature: 0.2,
+            maxOutputTokens: 2048,
+          },
         }),
         signal: controller.signal,
       }
@@ -119,7 +125,7 @@ export async function testGeminiConnection(
   model: string
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const result = await callGemini("OKとだけ返してください。", apiKey, model);
+    const result = await callGemini('{"ok": true} とだけ返してください。', apiKey, model);
     return { success: true, message: `Gemini APIに接続できました: ${result.trim()}` };
   } catch (error) {
     return {
@@ -176,7 +182,24 @@ ${workHistoryText || "(PDF添付または未入力)"}
 基本情報は書類に明記されている内容だけを抽出し、推測で補完しないでください。
 `;
 
-  const raw = await callGemini(prompt, apiKey, model, inlineDocuments);
+  let raw: string;
+  try {
+    raw = await callGemini(prompt, apiKey, model, inlineDocuments);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const shouldFallback =
+      model !== GEMINI_FALLBACK_MODEL &&
+      (message.includes("(429)") ||
+        message.includes("(503)") ||
+        message.includes("quota") ||
+        message.includes("high demand"));
+
+    if (!shouldFallback) {
+      throw error;
+    }
+
+    raw = await callGemini(prompt, apiKey, GEMINI_FALLBACK_MODEL, inlineDocuments);
+  }
   const parsed = parseJsonResponse<InterviewAnalysis>(raw);
 
   if (!parsed) {

@@ -55,13 +55,11 @@ export interface InterviewState {
 const STORAGE_KEY = "interview_hub_nextjs_v1";
 const SAVE_DEBOUNCE_MS = 500;
 export const GEMINI_MODEL_OPTIONS = [
+  { value: "gemini-3.1-flash-lite-preview", label: "Gemini 3.1 Flash Lite Preview（軽量）" },
   { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash（安定）" },
-  { value: "gemini-3-flash-preview", label: "Gemini 3 Flash Preview" },
-  { value: "gemini-3.1-flash-lite-preview", label: "Gemini 3.1 Flash Lite Preview" },
-  { value: "gemini-3.1-pro-preview", label: "Gemini 3.1 Pro Preview" },
 ] as const;
 
-const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
+const DEFAULT_GEMINI_MODEL = "gemini-3.1-flash-lite-preview";
 
 function normalizeGeminiModel(model: unknown): string {
   return typeof model === "string" &&
@@ -100,37 +98,31 @@ function normalizeSavedState(saved: LegacySavedState): InterviewState {
     ...getDefaultState(),
     logs: Array.isArray(saved.logs) ? saved.logs : [],
     freeMemo: typeof saved.freeMemo === "string" ? saved.freeMemo : "",
-    groqApiKey: typeof saved.groqApiKey === "string" ? saved.groqApiKey : "",
-    geminiApiKey:
-      typeof saved.geminiApiKey === "string"
-        ? saved.geminiApiKey
-        : typeof saved.apiKey === "string"
-          ? saved.apiKey
-          : "",
+    groqApiKey: "",
+    geminiApiKey: "",
     geminiModel: normalizeGeminiModel(saved.geminiModel),
-    resumeText: typeof saved.resumeText === "string" ? saved.resumeText : "",
-    resumeFileName: typeof saved.resumeFileName === "string" ? saved.resumeFileName : "",
-    workHistoryText:
-      typeof saved.workHistoryText === "string"
-        ? saved.workHistoryText
-        : typeof saved.esText === "string"
-          ? saved.esText
-          : "",
-    workHistoryFileName:
-      typeof saved.workHistoryFileName === "string" ? saved.workHistoryFileName : "",
-    interviewAnalysis: saved.interviewAnalysis ?? null,
+    resumeText: "",
+    resumeFileName: "",
+    workHistoryText: "",
+    workHistoryFileName: "",
+    interviewAnalysis: null,
   };
 }
 
 function toPersistedState(state: InterviewState): InterviewState {
   return {
     ...state,
+    groqApiKey: "",
+    geminiApiKey: "",
     resumeData: "",
-    resumeFileName: state.resumeText ? state.resumeFileName : "",
+    resumeText: "",
+    resumeFileName: "",
     resumeMimeType: state.resumeText ? state.resumeMimeType : "",
     workHistoryData: "",
-    workHistoryFileName: state.workHistoryText ? state.workHistoryFileName : "",
+    workHistoryText: "",
+    workHistoryFileName: "",
     workHistoryMimeType: state.workHistoryText ? state.workHistoryMimeType : "",
+    interviewAnalysis: null,
   };
 }
 

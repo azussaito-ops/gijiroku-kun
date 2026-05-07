@@ -14,6 +14,7 @@ import {
 import type { DocumentPayload, InterviewAnalysis } from "@/hooks/useInterviewStore";
 
 type DocumentKind = "resume" | "workHistory";
+const MAX_DOCUMENT_BYTES = 8 * 1024 * 1024;
 
 interface InterviewDocumentsProps {
   resumeFileName: string;
@@ -46,6 +47,11 @@ function DocumentUploader({
 
   const processFile = useCallback(
     async (file: File) => {
+      if (file.size > MAX_DOCUMENT_BYTES) {
+        setError("ファイルが大きすぎます。8MB以下のPDFまたはテキストにしてください。");
+        return;
+      }
+
       const extension = file.name.split(".").pop()?.toLowerCase();
       const isPdf = file.type === "application/pdf" || extension === "pdf";
       const isText = file.type.startsWith("text/") || extension === "txt" || extension === "md";
